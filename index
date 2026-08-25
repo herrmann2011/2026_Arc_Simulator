@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<!--
+  2026 ARC-CO / PLC Payment Estimator (Projected)
+  © 2026 Herrmann Integrated Agronomy LLC. All rights reserved.
+  Created: August 2026
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 ARC-CO / PLC Payment Estimator (Projected)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%}
+body{font-family:Arial,sans-serif;background:#f9f9f7;color:#1a1a1a;padding:10px;max-width:100%}
+.app-wrap{width:100%;max-width:100%;padding:0 16px;box-sizing:border-box}
+.dash{display:grid;grid-template-columns:280px 1fr;gap:14px;padding:8px 0;width:100%;align-items:start}
+@media(max-width:900px){.dash{grid-template-columns:1fr}}
+.panel{background:#ffffff;border:1px solid #e0e0d8;border-radius:10px;padding:14px;margin-bottom:14px}
+.panel-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#888;margin-bottom:12px}
+.input-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0ec;gap:8px}
+.input-row:last-child{border-bottom:none}
+.input-label{font-size:12px;color:#555;flex:1;padding-right:8px;line-height:1.3;display:flex;align-items:center}
+.input-val{background:#f5f5f0;border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:500;color:#1a1a1a;width:100px;text-align:right;padding:3px 8px;outline:none}
+.input-val:focus{border-color:#5a8a3c}
+.input-val-readonly{background:#eef5e8;border:1px solid #c8ddb8;border-radius:6px;font-size:12px;font-weight:600;color:#2d5a1b;width:100px;text-align:right;padding:3px 8px;cursor:default}
+.input-val-wide{background:#f5f5f0;border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:500;color:#1a1a1a;width:150px;text-align:left;padding:3px 6px;outline:none}
+.input-val-wide:focus{border-color:#5a8a3c}
+.request-area{font-size:11px;color:#888;line-height:1.5;margin-top:10px;padding-top:8px;border-top:1px solid #f0f0ec}
+.request-area a{color:#5a8a3c;font-weight:600;text-decoration:underline;cursor:pointer}
+.price-wrap{display:flex;align-items:center;background:#f5f5f0;border:1px solid #ddd;border-radius:6px;overflow:hidden;width:100px;flex-shrink:0}
+.price-wrap.ro{background:#eef5e8;border:1px solid #c8ddb8}
+.price-prefix{font-size:12px;font-weight:500;color:#888;padding:3px 0 3px 8px;flex-shrink:0}
+.price-wrap.ro .price-prefix{color:#2d5a1b}
+.price-input{background:transparent;border:none;font-size:12px;font-weight:500;color:#1a1a1a;width:100%;text-align:right;padding:3px 8px 3px 2px;outline:none;min-width:0}
+.price-wrap.ro .price-input{color:#2d5a1b;font-weight:600}
+.section-divider{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;padding:8px 0 2px;border-bottom:1px solid #e8e8e0;margin-bottom:6px}
+
+/* Header */
+.app-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:0 4px}
+.app-logo{height:44px;width:auto;flex-shrink:0}
+.app-header-text{flex:1;min-width:0;text-align:center}
+.app-header-spacer{width:44px;flex-shrink:0}
+h2.tool-title{font-size:clamp(13px,2.4vw,20px);font-weight:700;color:#2d5a1b;margin-bottom:2px;text-align:center;line-height:1.2}
+p.tool-sub{font-size:12px;color:#888;text-align:center;margin:0;line-height:1.3}
+@media(max-width:520px){
+  .app-header{flex-direction:column;gap:8px}
+  .app-logo{height:38px}
+  .app-header-spacer{display:none}
+}
+
+/* County checkbox grid */
+.county-grid{display:grid;grid-template-columns:1fr;gap:2px}
+.county-item{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #f0f0ec}
+.county-item:last-child{border-bottom:none}
+.county-item input[type=checkbox]{accent-color:#5a8a3c;width:14px;height:14px;cursor:pointer;flex-shrink:0}
+.county-item label{font-size:12px;color:#333;cursor:pointer;flex:1}
+.link-btn{background:none;border:none;color:#5a8a3c;font-size:11px;font-weight:600;cursor:pointer;padding:2px 0;text-decoration:underline}
+
+/* County multi-select dropdown */
+.county-dropdown{position:relative}
+.county-dd-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:#f5f5f0;border:1px solid #ddd;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;text-align:left}
+.county-dd-btn:hover{border-color:#c8ddb8}
+.county-dd-btn.open{border-color:#5a8a3c}
+.county-dd-btn .chev{font-size:9px;color:#888;transition:transform .15s;flex-shrink:0}
+.county-dd-btn.open .chev{transform:rotate(180deg)}
+.county-dd-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.12);z-index:50;padding:8px 10px;max-height:280px;overflow-y:auto}
+.county-dd-panel.open{display:block}
+.county-dd-actions{display:flex;justify-content:space-between;padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid #f0f0ec}
+
+/* Farm entry table */
+.farm-table-wrap{overflow-x:auto}
+table.farm-table{border-collapse:separate;border-spacing:0 6px;width:100%;min-width:760px}
+table.farm-table th{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#888;text-align:left;padding:0 6px 4px}
+table.farm-table td{padding:4px 6px;vertical-align:middle}
+table.farm-table tr.farm-row{background:#f9f9f7}
+table.farm-table tr.farm-row td{background:#f9f9f7;padding-top:6px;padding-bottom:6px}
+table.farm-table tr.farm-row td:first-child{border-radius:6px 0 0 6px}
+table.farm-table tr.farm-row td:last-child{border-radius:0 6px 6px 0}
+.ft-input{background:#fff;border:1px solid #ddd;border-radius:6px;font-size:12px;padding:5px 7px;width:100%;outline:none}
+.ft-input:focus{border-color:#5a8a3c}
+.ft-select{background:#fff;border:1px solid #ddd;border-radius:6px;font-size:12px;padding:5px 4px;width:100%;outline:none}
+.rm-btn{background:#f2b8b8;border:none;color:#7a1f1f;font-weight:700;font-size:12px;width:24px;height:24px;border-radius:6px;cursor:pointer;line-height:1}
+.rm-btn:hover{background:#e89a9a}
+.add-btn{background:#5a8a3c;color:#fff;border:none;font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer;margin-top:6px}
+.add-btn:hover{background:#4d7733}
+.add-btn.is-soy{background:#c98a2b}
+.add-btn.is-soy:hover{background:#ad7522}
+.empty-note{font-size:12px;color:#999;padding:14px 4px;text-align:center}
+.csv-btn{background:#fff;color:#5a8a3c;border:1px solid #c8ddb8;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer}
+.csv-btn:hover{background:#f0f7eb}
+#import-msg.ok{color:#2d5a1b}
+#import-msg.err{color:#a33}
+
+/* Collapsible farm panel */
+.panel-title-row{display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent}
+.panel-title-row .panel-title{margin-bottom:0}
+.panel-title-row .collapse-chev{font-size:11px;color:#888;transition:transform .15s;flex-shrink:0}
+.panel-title-row.collapsed .collapse-chev{transform:rotate(-90deg)}
+.collapse-summary{font-size:11px;color:#5a8a3c;font-weight:600;margin-left:8px}
+.collapsible-body{overflow:hidden}
+.collapsible-body.collapsed{display:none}
+
+.matrix-panel{container-type:inline-size;container-name:resultspanel}
+.results-wrap{width:100%}
+table.res-table{border-collapse:collapse;width:100%}
+table.res-table th{font-size:9.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#888;text-align:right;padding:6px 4px;border-bottom:2px solid #e0e0d8;overflow-wrap:break-word}
+table.res-table th:first-child,table.res-table th:nth-child(2),table.res-table th:nth-child(3){text-align:left}
+table.res-table td{font-size:11.5px;padding:6px 4px;text-align:right;border-bottom:1px solid #f0f0ec;overflow-wrap:break-word}
+table.res-table td:first-child,table.res-table td:nth-child(2),table.res-table td:nth-child(3){text-align:left}
+tr.county-header td{background:#f0f7eb;font-weight:700;color:#2d5a1b;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+tr.crop-subtotal td{background:#fbfbf9;font-weight:600;color:#555;font-size:11.5px;border-top:1px solid #f0f0ec}
+tr.county-subtotal td{background:#f5f5f0;font-weight:700;border-top:1px solid #ddd;border-bottom:2px solid #ddd}
+tr.grand-total td{background:#2d5a1b;color:#fff;font-weight:700;font-size:13px;border:none}
+td.pay-cell{font-weight:700;color:#2d5a1b}
+td.crop-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;display:inline-block}
+td.crop-tag.corn-tag{background:#e6f0dd;color:#3f6b28}
+td.crop-tag.soy-tag{background:#f5e6cc;color:#8a5c16}
+.winner-plc{color:#c98a2b}
+.winner-arc{color:#5a8a3c}
+
+/* Below this width, the results table stacks into per-row cards instead of scrolling.
+   Container query (not viewport media query) so this reacts to the actual
+   rendered width of the results panel — which can be much narrower than the
+   viewport once the sidebar column is present, or inside a GoDaddy embed. */
+@container resultspanel (max-width:700px){
+  table.res-table, table.res-table thead, table.res-table tbody{display:block;width:100%}
+  table.res-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  table.res-table tr{display:block}
+  tr.farm-data-row{background:#fff;border:1px solid #e8e8e0;border-radius:8px;padding:2px 0;margin-bottom:8px}
+  tr.county-header{border-radius:8px;margin-bottom:2px}
+  tr.crop-subtotal,tr.county-subtotal{border-radius:8px;margin-bottom:2px}
+  tr.grand-total{border-radius:8px;margin-bottom:2px}
+  table.res-table td{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;row-gap:2px;column-gap:10px;text-align:right;padding:6px 10px;border-bottom:1px solid #f4f4f0;max-width:100%;overflow-wrap:anywhere}
+  table.res-table td:first-child,table.res-table td:nth-child(2),table.res-table td:nth-child(3){text-align:right}
+  table.res-table tr.farm-data-row td:last-child{border-bottom:none}
+  table.res-table td[data-label]::before{content:attr(data-label);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#999;text-align:left;flex-shrink:0}
+  tr.grand-total td[data-label]::before{color:#cfe0c6}
+  table.res-table td:empty{display:none}
+  table.res-table td[colspan]{display:block;text-align:left;padding-bottom:2px;max-width:100%;overflow-wrap:anywhere}
+  td.pay-cell span{white-space:normal}
+}
+
+/* Info panel */
+.ref-table{width:100%;border-collapse:collapse;font-size:11px}
+.ref-table th{text-align:left;font-weight:700;color:#888;padding:3px 4px;border-bottom:1px solid #e8e8e0}
+.ref-table td{padding:3px 4px;border-bottom:1px solid #f4f4f0;color:#333}
+.ref-table td:first-child{color:#888}
+.ref-table td.num,{text-align:right}
+.ref-table td:not(:first-child){text-align:right;font-weight:600}
+
+.summary-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.sum-card{flex:1;min-width:150px;background:#f0f7eb;border:1px solid #c8ddb8;border-radius:10px;padding:12px 14px}
+.sum-card .sc-label{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5a8a3c;margin-bottom:4px}
+.sum-card .sc-val{font-size:20px;font-weight:700;color:#2d5a1b}
+.sum-card.alt{background:#faf3e6;border-color:#e6cfa0}
+.sum-card.alt .sc-label{color:#c98a2b}
+.sum-card.alt .sc-val{color:#8a5c16}
+
+.help-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#c8ddb8;color:#2d5a1b;font-size:10px;font-weight:700;margin-left:5px;cursor:help;flex-shrink:0;position:relative;font-family:Arial,sans-serif;line-height:1;user-select:none}
+.help-icon:hover{background:#7ab648;color:#fff}
+.help-tip{position:fixed;background:#1a1a1a;color:#fff;font-size:11px;font-weight:400;padding:8px 10px;border-radius:6px;width:230px;max-width:230px;line-height:1.4;text-align:left;z-index:10000;display:none;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.15);white-space:normal;left:0;top:0}
+.help-tip::after{content:"";position:absolute;left:var(--al,50%);margin-left:-5px;border:5px solid transparent}
+.help-tip.tip-up::after{top:100%;border-top-color:#1a1a1a}
+.help-tip.tip-down::after{bottom:100%;border-bottom-color:#1a1a1a}
+
+.disclaimer{font-size:10.5px;color:#999;line-height:1.5;margin-top:14px;padding:10px 12px;background:#fbfbf9;border:1px solid #eee;border-radius:8px}
+
+/* Expected county yield panel */
+.yield-table-wrap{overflow-x:auto}
+table.yield-table{border-collapse:separate;border-spacing:0 6px;width:100%;min-width:620px}
+table.yield-table th{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#888;text-align:left;padding:0 6px 4px}
+table.yield-table th.num,table.yield-table td.num{text-align:right}
+table.yield-table td{padding:4px 6px;vertical-align:middle}
+table.yield-table tr.yield-row{background:#f9f9f7}
+table.yield-table tr.yield-row td{background:#f9f9f7;padding-top:6px;padding-bottom:6px}
+table.yield-table tr.yield-row td:first-child{border-radius:6px 0 0 6px}
+table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
+.yield-record-box{background:#eef5e8;border:1px solid #c8ddb8;border-radius:6px;font-size:12px;font-weight:600;color:#2d5a1b;padding:5px 8px;text-align:right}
+.yield-input{background:#fff;border:1px solid #ddd;border-radius:6px;font-size:12px;padding:5px 7px;width:100%;text-align:right;outline:none}
+.yield-input:focus{border-color:#5a8a3c}
+
+/* CSV export fallback modal — shown alongside the auto-download attempt so
+   the data is always retrievable even if the embedding page's iframe
+   sandbox silently blocks the browser download trigger. */
+.csv-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;padding:20px}
+.csv-modal-overlay.open{display:flex}
+.csv-modal{background:#fff;border-radius:10px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+.csv-modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #eee}
+.csv-modal-head h3{font-size:14px;color:#2d5a1b}
+.csv-modal-close{background:none;border:none;font-size:18px;color:#888;cursor:pointer;line-height:1;padding:2px 6px}
+.csv-modal-body{padding:14px 16px;overflow-y:auto}
+.csv-modal-body p{font-size:12px;color:#555;line-height:1.5;margin-bottom:10px}
+.csv-modal-textarea{width:100%;height:220px;font-family:Consolas,Monaco,monospace;font-size:11px;border:1px solid #ddd;border-radius:6px;padding:8px;resize:vertical}
+.csv-modal-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<div class="app-wrap">
+<div class="app-header">
+  <img class="app-logo" alt="Herrmann Integrated Agronomy" src="https://img1.wsimg.com/isteam/ip/e2c8983a-bdb1-46c2-bda4-5a7ed1f19e32/blob-49a6601.png/:/rs=h:175,m" onerror="this.style.display='none'" />
+  <div class="app-header-text">
+    <h2 class="tool-title">2026 ARC-CO / PLC Payment Estimator (Projected)</h2>
+    <p class="tool-sub">Simulate 2026 crop-year Agriculture Risk Coverage – County (ARC-CO) and Price Loss Coverage (PLC) payments by farm, using your own yield &amp; price assumptions</p>
+    <p style="font-size:10px;color:#aaa;text-align:center;margin:2px 0 0;line-height:1.3">© 2026 Herrmann Integrated Agronomy LLC. All rights reserved. Projection only — final 2026 yields and prices are not yet known. Not an official FSA determination.</p>
+  </div>
+  <div class="app-header-spacer" aria-hidden="true"></div>
+</div>
+
+<div class="dash">
+  <div>
+    <div class="panel">
+      <div class="panel-title">MYA Price Assumptions</div>
+      <div class="input-row">
+        <span class="input-label">Corn MYA Price<span class="help-icon">?<span class="help-tip">USDA national Marketing Year Average price for corn. Defaults to an early-season 2026 planning estimate ($4.50/bu). Adjust to test different price scenarios — the Effective Price used in payment calcs is the higher of this value or the national loan rate ($2.20/bu).</span></span></span>
+        <div class="price-wrap"><span class="price-prefix">$</span><input class="price-input" id="i_mya_corn" type="number" step="0.01" value="4.50"></div>
+      </div>
+      <div class="input-row">
+        <span class="input-label">Soybean MYA Price<span class="help-icon">?<span class="help-tip">USDA national Marketing Year Average price for soybeans. Defaults to an early-season 2026 planning estimate ($11.40/bu). Adjust to test different price scenarios — the Effective Price used in payment calcs is the higher of this value or the national loan rate ($6.20/bu).</span></span></span>
+        <div class="price-wrap"><span class="price-prefix">$</span><input class="price-input" id="i_mya_soy" type="number" step="0.01" value="11.40"></div>
+      </div>
+      <button type="button" class="link-btn" id="reset-mya" style="margin-top:8px">Reset to defaults</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">2026 Program Reference Data<span class="help-icon">?<span class="help-tip">Statutory reference prices, effective reference prices (used for PLC), ARC-CO benchmark prices, and national loan rates currently projected for the 2026 crop year, reflecting the One Big Beautiful Bill Act updates.</span></span></div>
+      <table class="ref-table">
+        <thead><tr><th></th><th>Corn</th><th>Soybeans</th></tr></thead>
+        <tbody>
+          <tr><td>Statutory Ref. Price</td><td>$4.10</td><td>$10.00</td></tr>
+          <tr><td>Effective Ref. Price (PLC)</td><td>$4.42</td><td>$10.71</td></tr>
+          <tr><td>ARC-CO Benchmark Price</td><td>$5.03</td><td>$12.17</td></tr>
+          <tr><td>National Loan Rate</td><td>$2.20</td><td>$6.20</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="input-row">
+        <span class="input-label">State<span class="help-icon">?<span class="help-tip">The state you farm in. Currently only Illinois is supported.</span></span></span>
+        <select class="input-val-wide" id="i_state">
+          <option value="IL" selected>Illinois</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Select Counties<span class="help-icon">?<span class="help-tip">Check every county where you farm base acres. Checked counties become available in the farm entry table below, and their record &amp; expected 2026 yields will appear in the yield panel.</span></span></div>
+      <div class="county-dropdown" id="county-dropdown">
+        <button type="button" class="county-dd-btn" id="county-dd-btn">
+          <span id="county-dd-label">Select counties…</span>
+          <span class="chev">▾</span>
+        </button>
+        <div class="county-dd-panel" id="county-dd-panel">
+          <div class="county-dd-actions">
+            <button type="button" class="link-btn" id="county-select-all">Select all</button>
+            <button type="button" class="link-btn" id="county-clear-all">Clear all</button>
+          </div>
+          <div class="county-grid" id="county-grid"></div>
+        </div>
+      </div>
+      <div class="request-area">
+        Don't see your state/county? <a href="#" id="request-area-link">Click here to request your area's data.</a>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title">2026 Expected County Yields<span class="help-icon">?<span class="help-tip">Final 2026 county yields aren't known yet — you tell the tool what to assume. Record County Yield is the highest final NASS county yield on record for that county/crop. 2026 Expected Yield is an early trend-yield estimate, shown for reference. 2026 Final Yield is the box you edit to test your own scenario — it drives the Actual County Revenue used in the ARC-CO calculation below.</span></span></div>
+      <div class="yield-table-wrap">
+        <table class="yield-table" id="yield-table">
+          <thead>
+            <tr>
+              <th style="width:26%">County</th>
+              <th style="width:14%">Crop</th>
+              <th class="num" style="width:20%">Record County Yield</th>
+              <th class="num" style="width:20%">2026 Expected Yield</th>
+              <th class="num" style="width:20%">2026 Final Yield</th>
+            </tr>
+          </thead>
+          <tbody id="yield-tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="yield-empty-note">Select at least one county on the left to see its record &amp; expected 2026 yields.</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title-row" id="farm-panel-toggle">
+        <div class="panel-title">Farms / FSNs<span class="collapse-summary" id="farm-collapse-summary"></span></div>
+        <span class="collapse-chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="farm-panel-body">
+        <div class="farm-table-wrap">
+          <table class="farm-table" id="farm-table">
+            <thead>
+              <tr>
+                <th style="width:14%">County</th>
+                <th style="width:12%">Farm Serial # (FSN)</th>
+                <th style="width:11%">Crop</th>
+                <th style="width:16%">Program Election</th>
+                <th style="width:13%">Base Acres</th>
+                <th style="width:13%">PLC Yield (bu/ac)</th>
+                <th style="width:6%"></th>
+              </tr>
+            </thead>
+            <tbody id="farm-tbody"></tbody>
+          </table>
+        </div>
+        <div class="empty-note" id="empty-note">Select at least one county on the left, then add a farm.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px">
+          <button type="button" class="add-btn" id="add-farm-btn">+ Add Farm / FSN</button>
+          <button type="button" class="csv-btn" id="export-csv-btn">⬇ Export CSV</button>
+          <button type="button" class="csv-btn" id="import-csv-btn">⬆ Import CSV</button>
+          <input type="file" id="import-csv-file" accept=".csv" style="display:none">
+        </div>
+        <div id="import-msg" style="font-size:11px;margin-top:6px;display:none"></div>
+      </div>
+    </div>
+
+    <div class="csv-modal-overlay" id="csv-modal-overlay">
+      <div class="csv-modal">
+        <div class="csv-modal-head">
+          <h3>Your Farm Data (CSV)</h3>
+          <button type="button" class="csv-modal-close" id="csv-modal-close" aria-label="Close">×</button>
+        </div>
+        <div class="csv-modal-body">
+          <p>A download was attempted automatically. If a file didn't appear (common when this tool is embedded on a webpage), copy the text below and paste it into a spreadsheet, or click "Copy to Clipboard."</p>
+          <textarea class="csv-modal-textarea" id="csv-modal-textarea" readonly></textarea>
+          <div class="csv-modal-actions">
+            <button type="button" class="add-btn" id="csv-modal-copy">Copy to Clipboard</button>
+            <button type="button" class="csv-btn" id="csv-modal-newtab">Open in New Tab</button>
+            <button type="button" class="csv-btn" id="csv-modal-close2">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel matrix-panel">
+      <div class="panel-title">Estimated 2026 Payments (Projected)<span class="help-icon">?<span class="help-tip">Unlike 2025's one-time "higher of" rule, starting with 2026 FSA pays whichever program the farm actually elected — ARC-CO or PLC — for that covered commodity, not automatically the higher of the two. Set each farm's Program Election above; the Payment column below reflects only the elected program's result, using your MYA price assumptions and 2026 Final Yield entries above.</span></span></div>
+      <div class="results-wrap">
+        <table class="res-table" id="res-table">
+          <thead>
+            <tr>
+              <th>FSN</th><th>County</th><th>Crop</th><th>Election</th><th>Base Ac.</th><th>PLC Yield</th>
+              <th>ARC-CO $/ac</th><th>PLC $/ac</th><th>Payment (Elected)</th>
+            </tr>
+          </thead>
+          <tbody id="res-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="summary-strip">
+        <div class="sum-card">
+          <div class="sc-label">Total Base Acres</div>
+          <div class="sc-val" id="sum-acres">0</div>
+        </div>
+        <div class="sum-card">
+          <div class="sc-label">ARC-CO Elected Payment</div>
+          <div class="sc-val" id="sum-arc">$0</div>
+        </div>
+        <div class="sum-card">
+          <div class="sc-label">PLC Elected Payment</div>
+          <div class="sc-val" id="sum-plc">$0</div>
+        </div>
+        <div class="sum-card alt">
+          <div class="sc-label">Estimated Total Payment</div>
+          <div class="sc-val" id="sum-total">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>How this projection works:</strong> PLC Payment/ac = 85% × (Effective Reference Price − Effective Price) × your PLC Yield, where Effective Price is the higher of the MYA price above or the national loan rate. ARC-CO Payment/ac = 85% × min[(90% × Benchmark Revenue − Actual County Revenue), 12% × Benchmark Revenue], where Benchmark Revenue = ARC-CO Benchmark Price × ARC-CO Benchmark (Olympic-average) County Yield, and Actual County Revenue = Effective Price × the <em>2026 Final Yield</em> you enter above (since final 2026 NASS county yields won't be published until well after harvest). Reference prices, benchmark prices/yields, and loan rates reflect the One Big Beautiful Bill Act of 2025 changes to the 2018 Farm Bill formulas (90% guarantee, 12% cap, 113%/88% effective reference price escalator), currently projected forward to the 2026 crop year. <strong>Program election matters for 2026:</strong> 2025 was the only crop year FSA paid the higher of ARC-CO or PLC automatically — every other year, including 2026, FSA pays only the program actually elected for that farm and covered commodity. Set each farm's Program Election in the table above to match what was elected; the results reflect only that program's payment, with the other program's $/ac shown for reference only. This tool provides planning-stage estimates only, using assumptions you control; it is not an official FSA payment calculation, does not reflect final USDA prices or yields, and does not account for payment limitations, adjusted gross income limits, or sequestration reductions. Confirm final figures — including your actual program election — with your local FSA office once 2026 data is published.
+    </div>
+  </div>
+</div>
+
+<footer style="width:100%;text-align:center;font-size:10px;color:#aaa;padding:16px 10px 10px;border-top:1px solid #e8e8e0;margin-top:20px">
+  © 2026 Herrmann Integrated Agronomy LLC — 2026 ARC-CO / PLC Payment Estimator (Projected). All rights reserved. Unauthorized reproduction prohibited.
+</footer>
+</div>
+
+<script>
+// ── 2026 Program Reference Data (reflects One Big Beautiful Bill Act updates, projected forward) ──
+const PROGRAM = {
+  corn: { effRefPrice: 4.42, benchmarkPrice: 5.03, loanRate: 2.20, defaultMYA: 4.50, label: "Corn" },
+  soybeans: { effRefPrice: 10.71, benchmarkPrice: 12.17, loanRate: 6.20, defaultMYA: 11.40, label: "Soybeans" }
+};
+const ARC_GUARANTEE = 0.90;   // OBBBA: 90% of benchmark revenue (was 86%)
+const ARC_CAP = 0.12;         // OBBBA: 12% of benchmark revenue (was 10%)
+const PAYMENT_FACTOR = 0.85;  // 85% of base acres
+
+// ── County data: 2026 ARC-CO benchmark (Olympic-avg) yield, all-time record county
+// yield (highest final NASS yield on record), and an early 2026 trend-yield estimate
+// (used only as the starting point for the user-editable "2026 Expected Yield" input) ──
+const COUNTIES = [
+  { name:"Bureau Co",   corn:{arcYield:233.09, recordYield:250.4, expectedYield:233.9}, soy:{arcYield:70.75, recordYield:72.6, expectedYield:69.0} },
+  { name:"Fulton Co",   corn:{arcYield:214.64, recordYield:229.8, expectedYield:210.8}, soy:{arcYield:67.24, recordYield:70.6, expectedYield:65.9} },
+  { name:"Henry Co",    corn:{arcYield:231.89, recordYield:238.9, expectedYield:231.5}, soy:{arcYield:68.16, recordYield:69.8, expectedYield:66.2} },
+  { name:"Knox Co",     corn:{arcYield:233.07, recordYield:242.2, expectedYield:235.3}, soy:{arcYield:69.17, recordYield:71.4, expectedYield:66.7} },
+  { name:"Marshall Co", corn:{arcYield:235.89, recordYield:241.3, expectedYield:233.6}, soy:{arcYield:73.28, recordYield:74.3, expectedYield:68.0} },
+  { name:"McLean Co",   corn:{arcYield:236.28, recordYield:249.9, expectedYield:233.2}, soy:{arcYield:70.43, recordYield:75.3, expectedYield:69.8} },
+  { name:"Peoria Co",   corn:{arcYield:231.72, recordYield:241.7, expectedYield:229.8}, soy:{arcYield:70.47, recordYield:72.7, expectedYield:67.2} },
+  { name:"Putnam Co",   corn:{arcYield:221.66, recordYield:227.5, expectedYield:221.6}, soy:{arcYield:67.62, recordYield:70.9, expectedYield:64.9} },
+  { name:"Stark Co",    corn:{arcYield:238.91, recordYield:245.0, expectedYield:236.8}, soy:{arcYield:73.14, recordYield:74.5, expectedYield:70.6} },
+  { name:"Tazewell Co", corn:{arcYield:238.89, recordYield:252.0, expectedYield:238.2}, soy:{arcYield:74.15, recordYield:76.5, expectedYield:72.7} },
+  { name:"Woodford Co", corn:{arcYield:239.83, recordYield:245.6, expectedYield:237.3}, soy:{arcYield:71.86, recordYield:75.4, expectedYield:69.0} }
+];
+
+let farms = []; // {id, county, fsn, crop, baseAcres, plcYield}
+let nextId = 1;
+
+// User-editable "2026 Final Yield" per county+crop, keyed "idx_crop" — this is the
+// figure the user enters for what they think the crop will actually do, and it's what
+// drives the ARC-CO Actual County Revenue calc. Seeded with each county's early
+// trend-yield estimate (same starting value shown read-only in "2026 Expected Yield").
+let finalYields = {};
+function yKey(idx, crop){ return idx + '_' + crop; }
+function getFinalYield(idx, crop){
+  const key = yKey(idx, crop);
+  if(!(key in finalYields)) finalYields[key] = COUNTIES[idx][crop==='corn'?'corn':'soy'].expectedYield;
+  return finalYields[key];
+}
+
+// ── Build county checkbox list ──────────────────────────────
+const countyGrid = document.getElementById('county-grid');
+COUNTIES.forEach((c,i)=>{
+  const div = document.createElement('div');
+  div.className = 'county-item';
+  div.innerHTML = `<input type="checkbox" id="cty_${i}" data-idx="${i}"><label for="cty_${i}">${c.name}</label>`;
+  countyGrid.appendChild(div);
+});
+countyGrid.addEventListener('change', ()=>{ refreshFarmCountyOptions(); renderFarms(); renderYieldPanel(); updateCountyDDLabel(); });
+
+function selectedCounties(){
+  return COUNTIES.map((c,i)=>({c,i})).filter(x=>document.getElementById('cty_'+x.i).checked);
+}
+
+// ── County multi-select dropdown ─────────────────────────────
+const countyDdBtn = document.getElementById('county-dd-btn');
+const countyDdPanel = document.getElementById('county-dd-panel');
+
+function updateCountyDDLabel(){
+  const sel = selectedCounties();
+  const label = document.getElementById('county-dd-label');
+  if(sel.length===0) label.textContent = 'Select counties…';
+  else if(sel.length<=2) label.textContent = sel.map(x=>x.c.name).join(', ');
+  else label.textContent = `${sel.length} counties selected`;
+}
+
+countyDdBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const open = countyDdPanel.classList.toggle('open');
+  countyDdBtn.classList.toggle('open', open);
+});
+document.addEventListener('click', (e)=>{
+  if(!document.getElementById('county-dropdown').contains(e.target)){
+    countyDdPanel.classList.remove('open');
+    countyDdBtn.classList.remove('open');
+  }
+});
+document.getElementById('county-select-all').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  COUNTIES.forEach((c,i)=>{ document.getElementById('cty_'+i).checked = true; });
+  refreshFarmCountyOptions(); renderFarms(); renderYieldPanel(); updateCountyDDLabel();
+});
+document.getElementById('county-clear-all').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  COUNTIES.forEach((c,i)=>{ document.getElementById('cty_'+i).checked = false; });
+  refreshFarmCountyOptions(); renderFarms(); renderYieldPanel(); updateCountyDDLabel();
+});
+updateCountyDDLabel();
+
+// ── "Request your area" mailto link ──────────────────────────
+document.getElementById('request-area-link').addEventListener('click', (e)=>{
+  e.preventDefault();
+  const subject = "ARC/PLC Tool - Request My State/County Data";
+  const body = "Hi Andrew,\n\nI'd like to use the 2026 ARC-CO / PLC Payment Estimator for the following area(s) that aren't currently in the tool:\n\nState:\nCounty/Counties:\n\nThanks!";
+  window.location.href = `mailto:andrewherrmann@herrmannintegratedag.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+});
+
+// ── 2026 Expected County Yields panel ──────────────────────────
+function fmtY(v){ return (Math.round(v*10)/10).toString(); }
+
+function renderYieldPanel(){
+  const tbody = document.getElementById('yield-tbody');
+  const sel = selectedCounties();
+  document.getElementById('yield-empty-note').style.display = sel.length===0 ? 'block' : 'none';
+  tbody.innerHTML = '';
+  sel.forEach(({c,i})=>{
+    ['corn','soybeans'].forEach(crop=>{
+      const cd = c[crop==='corn'?'corn':'soy'];
+      const key = yKey(i, crop);
+      const val = getFinalYield(i, crop);
+      const tr = document.createElement('tr');
+      tr.className = 'yield-row';
+      tr.innerHTML = `
+        <td>${c.name}</td>
+        <td><span class="crop-tag ${crop==='corn'?'corn-tag':'soy-tag'}">${crop==='corn'?'Corn':'Soybeans'}</span></td>
+        <td class="num"><div class="yield-record-box">${fmtY(cd.recordYield)}</div></td>
+        <td class="num"><div class="yield-record-box">${fmtY(cd.expectedYield)}</div></td>
+        <td class="num"><input class="yield-input" type="number" step="0.1" min="0" data-key="${key}" value="${fmtY(val)}"></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+  tbody.querySelectorAll('.yield-input').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      finalYields[el.dataset.key] = parseFloat(el.value)||0;
+      calc();
+    });
+  });
+}
+renderYieldPanel();
+
+// ── Farm row management ─────────────────────────────────────
+document.getElementById('add-farm-btn').addEventListener('click', ()=>{
+  const sel = selectedCounties();
+  if(sel.length===0){ alert('Select at least one county first.'); return; }
+  farms.push({ id: nextId++, countyIdx: sel[0].i, fsn:'', crop:'corn', program:'arc', baseAcres:0, plcYield:0 });
+  renderFarms();
+});
+
+function refreshFarmCountyOptions(){
+  const sel = selectedCounties().map(x=>x.i);
+  // Drop farms whose county was deselected
+  farms = farms.filter(f=>sel.includes(f.countyIdx));
+}
+
+// ── Collapsible Farms/FSNs panel ─────────────────────────────
+const farmPanelToggle = document.getElementById('farm-panel-toggle');
+const farmPanelBody = document.getElementById('farm-panel-body');
+farmPanelToggle.addEventListener('click', ()=>{
+  const collapsed = farmPanelBody.classList.toggle('collapsed');
+  farmPanelToggle.classList.toggle('collapsed', collapsed);
+});
+
+function updateFarmCollapseSummary(){
+  const el = document.getElementById('farm-collapse-summary');
+  if(farms.length===0){ el.textContent = ''; return; }
+  const acres = farms.reduce((s,f)=>s+f.baseAcres,0);
+  el.textContent = `— ${farms.length} farm${farms.length===1?'':'s'}, ${acres.toLocaleString()} total acres`;
+}
+
+function renderFarms(){
+  const tbody = document.getElementById('farm-tbody');
+  const sel = selectedCounties();
+  document.getElementById('empty-note').style.display = (farms.length===0) ? 'block' : 'none';
+  document.getElementById('add-farm-btn').disabled = sel.length===0;
+  updateFarmCollapseSummary();
+  tbody.innerHTML = '';
+  farms.forEach(f=>{
+    const tr = document.createElement('tr');
+    tr.className = 'farm-row';
+    const countyOpts = sel.map(x=>`<option value="${x.i}" ${x.i===f.countyIdx?'selected':''}>${x.c.name}</option>`).join('');
+    tr.innerHTML = `
+      <td><select class="ft-select" data-field="countyIdx" data-id="${f.id}">${countyOpts}</select></td>
+      <td><input class="ft-input" type="text" data-field="fsn" data-id="${f.id}" value="${f.fsn}" placeholder="e.g. 1234"></td>
+      <td><select class="ft-select" data-field="crop" data-id="${f.id}">
+            <option value="corn" ${f.crop==='corn'?'selected':''}>Corn</option>
+            <option value="soybeans" ${f.crop==='soybeans'?'selected':''}>Soybeans</option>
+          </select></td>
+      <td><select class="ft-select" data-field="program" data-id="${f.id}">
+            <option value="arc" ${f.program==='arc'?'selected':''}>ARC-CO</option>
+            <option value="plc" ${f.program==='plc'?'selected':''}>PLC</option>
+          </select></td>
+      <td><input class="ft-input" type="number" step="1" min="0" data-field="baseAcres" data-id="${f.id}" value="${f.baseAcres}"></td>
+      <td><input class="ft-input" type="number" step="0.1" min="0" data-field="plcYield" data-id="${f.id}" value="${f.plcYield}"></td>
+      <td><button type="button" class="rm-btn" data-id="${f.id}" title="Remove farm">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('[data-field]').forEach(el=>{
+    el.addEventListener('input', onFarmFieldChange);
+    el.addEventListener('change', onFarmFieldChange);
+  });
+  tbody.querySelectorAll('.rm-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      farms = farms.filter(f=>f.id !== parseInt(btn.dataset.id));
+      renderFarms(); calc();
+    });
+  });
+  calc();
+}
+
+function onFarmFieldChange(e){
+  const id = parseInt(e.target.dataset.id);
+  const field = e.target.dataset.field;
+  const f = farms.find(x=>x.id===id);
+  if(!f) return;
+  if(field==='countyIdx') f.countyIdx = parseInt(e.target.value);
+  else if(field==='crop') f.crop = e.target.value;
+  else if(field==='program') f.program = e.target.value;
+  else if(field==='fsn') f.fsn = e.target.value;
+  else if(field==='baseAcres') f.baseAcres = parseFloat(e.target.value)||0;
+  else if(field==='plcYield') f.plcYield = parseFloat(e.target.value)||0;
+  calc();
+}
+
+// ── CSV export ───────────────────────────────────────────────
+function csvEscape(v){
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+
+document.getElementById('export-csv-btn').addEventListener('click', ()=>{
+  if(farms.length===0){ showImportMsg('No farms to export yet — add at least one farm first.', 'err'); return; }
+  const header = ['County','FSN','Crop','Program','BaseAcres','PLCYield'];
+  const lines = [header.join(',')];
+  farms.forEach(f=>{
+    lines.push([
+      csvEscape(COUNTIES[f.countyIdx].name),
+      csvEscape(f.fsn),
+      csvEscape(f.crop==='corn'?'Corn':'Soybeans'),
+      csvEscape(f.program==='plc'?'PLC':'ARC-CO'),
+      csvEscape(f.baseAcres),
+      csvEscape(f.plcYield)
+    ].join(','));
+  });
+  const csvContent = lines.join('\n');
+
+  // Attempt the standard blob-download trigger. In some embedded contexts
+  // (e.g. a sandboxed iframe on a page builder) the browser silently blocks
+  // this without throwing an error, so we can't rely on it alone.
+  try{
+    const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'arc_plc_2026_farms.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  } catch(err){ /* fall through to modal fallback below */ }
+
+  // Always surface the fallback modal too, since a blocked download gives
+  // no JS-detectable signal — this guarantees the data is retrievable
+  // regardless of whether the auto-download actually worked.
+  openCsvFallback(csvContent);
+  showImportMsg(`Prepared ${farms.length} farm${farms.length===1?'':'s'} for export. Check your downloads, or use the "Your Farm Data" window that just opened.`, 'ok');
+});
+
+// ── CSV export fallback modal (copy/open-in-new-tab) ─────────
+const csvModalOverlay = document.getElementById('csv-modal-overlay');
+const csvModalTextarea = document.getElementById('csv-modal-textarea');
+
+function openCsvFallback(csvContent){
+  csvModalTextarea.value = csvContent;
+  csvModalOverlay.classList.add('open');
+}
+function closeCsvFallback(){
+  csvModalOverlay.classList.remove('open');
+}
+document.getElementById('csv-modal-close').addEventListener('click', closeCsvFallback);
+document.getElementById('csv-modal-close2').addEventListener('click', closeCsvFallback);
+csvModalOverlay.addEventListener('click', (e)=>{ if(e.target === csvModalOverlay) closeCsvFallback(); });
+
+document.getElementById('csv-modal-copy').addEventListener('click', async ()=>{
+  const btn = document.getElementById('csv-modal-copy');
+  const original = btn.textContent;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(csvModalTextarea.value);
+    } else {
+      csvModalTextarea.select();
+      document.execCommand('copy');
+    }
+    btn.textContent = 'Copied!';
+  } catch(err){
+    csvModalTextarea.select();
+    try{ document.execCommand('copy'); btn.textContent = 'Copied!'; }
+    catch(err2){ btn.textContent = 'Select the text above and copy manually'; }
+  }
+  setTimeout(()=>{ btn.textContent = original; }, 2000);
+});
+
+document.getElementById('csv-modal-newtab').addEventListener('click', ()=>{
+  try{
+    const win = window.open('', '_blank');
+    if(win){
+      win.document.write('<pre style="white-space:pre-wrap;font-family:Consolas,Monaco,monospace;font-size:12px;padding:16px">'
+        + csvModalTextarea.value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        + '</pre>');
+      win.document.title = 'ARC/PLC Farm Data (CSV)';
+      win.document.close();
+    } else {
+      showImportMsg('Pop-up blocked — please allow pop-ups, or use "Copy to Clipboard" instead.', 'err');
+    }
+  } catch(err){
+    showImportMsg('Could not open a new tab — please use "Copy to Clipboard" instead.', 'err');
+  }
+});
+
+// ── CSV import ───────────────────────────────────────────────
+document.getElementById('import-csv-btn').addEventListener('click', ()=>{
+  document.getElementById('import-csv-file').click();
+});
+
+document.getElementById('import-csv-file').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{ parseAndImportCsv(evt.target.result); };
+  reader.onerror = ()=>{ showImportMsg('Could not read that file. Please try again.', 'err'); };
+  reader.readAsText(file);
+  e.target.value = ''; // allow re-selecting the same file later
+});
+
+// Minimal CSV line parser that respects quoted fields containing commas
+function parseCsvLine(line){
+  const out = [];
+  let cur = '', inQuotes = false;
+  for(let i=0;i<line.length;i++){
+    const ch = line[i];
+    if(inQuotes){
+      if(ch === '"'){
+        if(line[i+1] === '"'){ cur+='"'; i++; }
+        else inQuotes = false;
+      } else cur += ch;
+    } else {
+      if(ch === '"') inQuotes = true;
+      else if(ch === ','){ out.push(cur); cur=''; }
+      else cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+function normName(s){ return String(s||'').trim().toLowerCase().replace(/\s+co\.?$/,'').replace(/\s+/g,' '); }
+
+function findCountyIdx(name){
+  const n = normName(name);
+  let idx = COUNTIES.findIndex(c=>normName(c.name) === n);
+  if(idx === -1) idx = COUNTIES.findIndex(c=>normName(c.name).startsWith(n) || n.startsWith(normName(c.name)));
+  return idx;
+}
+
+function parseAndImportCsv(text){
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  if(lines.length < 2){ showImportMsg('That CSV has no farm rows to import.', 'err'); return; }
+
+  const header = parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
+  const idxCounty = header.indexOf('county');
+  const idxFsn = header.indexOf('fsn');
+  const idxCrop = header.indexOf('crop');
+  const idxProgram = header.indexOf('program');
+  const idxAcres = header.indexOf('baseacres');
+  const idxYield = header.indexOf('plcyield');
+
+  if(idxCounty===-1 || idxFsn===-1 || idxCrop===-1 || idxAcres===-1 || idxYield===-1){
+    showImportMsg('CSV headers must be: County, FSN, Crop, Program, BaseAcres, PLCYield.', 'err');
+    return;
+  }
+
+  const imported = [];
+  const unknownCounties = new Set();
+  let skipped = 0;
+
+  for(let i=1;i<lines.length;i++){
+    const row = parseCsvLine(lines[i]);
+    if(row.every(c=>c.trim()==='')) continue;
+    const countyName = row[idxCounty];
+    const cIdx = findCountyIdx(countyName);
+    if(cIdx === -1){ unknownCounties.add(countyName); skipped++; continue; }
+    const cropRaw = (row[idxCrop]||'').trim().toLowerCase();
+    const crop = cropRaw.startsWith('soy') ? 'soybeans' : 'corn';
+    const programRaw = idxProgram===-1 ? '' : (row[idxProgram]||'').trim().toLowerCase();
+    const program = programRaw.startsWith('plc') ? 'plc' : 'arc';
+    imported.push({
+      id: nextId++,
+      countyIdx: cIdx,
+      fsn: (row[idxFsn]||'').trim(),
+      crop,
+      program,
+      baseAcres: parseFloat(row[idxAcres]) || 0,
+      plcYield: parseFloat(row[idxYield]) || 0
+    });
+  }
+
+  if(imported.length === 0){
+    showImportMsg('No valid rows found — check that county names match your county list.', 'err');
+    return;
+  }
+
+  // Check every county referenced by the import so its farms are visible
+  const neededIdxs = new Set(imported.map(f=>f.countyIdx));
+  neededIdxs.forEach(i=>{ document.getElementById('cty_'+i).checked = true; });
+
+  farms = imported;
+  renderFarms();
+  renderYieldPanel();
+  updateCountyDDLabel();
+
+  let msg = `Imported ${imported.length} farm${imported.length===1?'':'s'}.`;
+  if(skipped>0) msg += ` Skipped ${skipped} row${skipped===1?'':'s'} with an unrecognized county (${Array.from(unknownCounties).join(', ')}).`;
+  showImportMsg(msg, skipped>0 ? 'err' : 'ok');
+}
+
+function showImportMsg(text, kind){
+  const el = document.getElementById('import-msg');
+  el.textContent = text;
+  el.className = kind;
+  el.style.display = 'block';
+}
+
+// ── MYA price handling ──────────────────────────────────────
+document.getElementById('i_mya_corn').addEventListener('input', calc);
+document.getElementById('i_mya_soy').addEventListener('input', calc);
+document.getElementById('reset-mya').addEventListener('click', ()=>{
+  document.getElementById('i_mya_corn').value = PROGRAM.corn.defaultMYA.toFixed(2);
+  document.getElementById('i_mya_soy').value = PROGRAM.soybeans.defaultMYA.toFixed(2);
+  calc();
+});
+
+function g(id){ return parseFloat(document.getElementById(id).value)||0; }
+function fmtD(v){ const n=Math.round(v); return (n<0?'-$':'$')+Math.abs(n).toLocaleString(); }
+function fmt2(v){ return v.toFixed(2); }
+
+// ── Core calculations ───────────────────────────────────────
+function effectivePrice(crop){
+  const mya = crop==='corn' ? g('i_mya_corn') : g('i_mya_soy');
+  return Math.max(mya, PROGRAM[crop].loanRate);
+}
+
+function plcPerAcre(crop, plcYield){
+  const p = PROGRAM[crop];
+  const effP = effectivePrice(crop);
+  const rate = Math.max(0, p.effRefPrice - effP); // naturally capped at effRefPrice - loanRate
+  return rate * plcYield;
+}
+
+function arcPerAcre(crop, countyIdx){
+  const p = PROGRAM[crop];
+  const cd = COUNTIES[countyIdx][crop==='corn'?'corn':'soy'];
+  const benchRev = p.benchmarkPrice * cd.arcYield;
+  const guarantee = ARC_GUARANTEE * benchRev;
+  const effP = effectivePrice(crop);
+  const finalYield = getFinalYield(countyIdx, crop);
+  const actualRev = effP * finalYield;
+  const cap = ARC_CAP * benchRev;
+  return Math.min(Math.max(0, guarantee - actualRev), cap);
+}
+
+function calc(){
+  const tbody = document.getElementById('res-tbody');
+  tbody.innerHTML = '';
+  let grandAcres=0, grandArc=0, grandPlc=0, grandPay=0;
+
+  const byCounty = {};
+  farms.forEach(f=>{ (byCounty[f.countyIdx] = byCounty[f.countyIdx]||[]).push(f); });
+
+  const countyIdxs = Object.keys(byCounty).map(Number).sort((a,b)=>COUNTIES[a].name.localeCompare(COUNTIES[b].name));
+
+  if(countyIdxs.length===0){
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:16px;">No farms added yet.</td></tr>';
+  }
+
+  // Builds a summary row (crop subtotal / county subtotal / grand total) with
+  // explicit inline text-align on every cell so a leading colspan can't throw
+  // off column alignment via CSS :nth-child selectors. Columns are:
+  // FSN, County, Crop, Election (colspan 4) | Base Ac. | PLC Yield | ARC-CO $/ac | PLC $/ac | Payment (Elected)
+  function summaryRow(className, label, acres, pay){
+    const tr = document.createElement('tr');
+    tr.className = className;
+    tr.innerHTML = `
+      <td colspan="4" style="text-align:left">${label}</td>
+      <td style="text-align:right" data-label="Base Ac.">${acres.toLocaleString()}</td>
+      <td></td><td></td><td></td>
+      <td style="text-align:right" data-label="Payment">${fmtD(pay)}</td>
+    `;
+    return tr;
+  }
+
+  countyIdxs.forEach(ci=>{
+    const rows = byCounty[ci];
+    const hRow = document.createElement('tr');
+    hRow.className = 'county-header';
+    hRow.innerHTML = `<td colspan="9">${COUNTIES[ci].name}</td>`;
+    tbody.appendChild(hRow);
+
+    let cAcres=0, cPay=0;
+
+    ['corn','soybeans'].forEach(cropKey=>{
+      const cropRows = rows.filter(f=>f.crop===cropKey);
+      if(cropRows.length===0) return;
+
+      let kAcres=0, kPay=0;
+
+      cropRows.forEach(f=>{
+        const arcAc = arcPerAcre(f.crop, f.countyIdx);
+        const plcAc = plcPerAcre(f.crop, f.plcYield);
+        const arcTot = arcAc * PAYMENT_FACTOR * f.baseAcres;
+        const plcTot = plcAc * PAYMENT_FACTOR * f.baseAcres;
+        const isArc = f.program === 'arc';
+        const payTot = isArc ? arcTot : plcTot;
+        const electionClass = isArc ? 'winner-arc' : 'winner-plc';
+        const electionLabel = isArc ? 'ARC-CO' : 'PLC';
+
+        kAcres += f.baseAcres; kPay += payTot;
+        if(isArc) grandArc += payTot; else grandPlc += payTot;
+
+        const tr = document.createElement('tr');
+        tr.className = 'farm-data-row';
+        tr.innerHTML = `
+          <td data-label="FSN">${f.fsn || '—'}</td>
+          <td data-label="County">${COUNTIES[f.countyIdx].name}</td>
+          <td data-label="Crop"><span class="crop-tag ${f.crop==='corn'?'corn-tag':'soy-tag'}">${f.crop==='corn'?'Corn':'Soybeans'}</span></td>
+          <td data-label="Election"><span class="crop-tag ${electionClass==='winner-arc'?'corn-tag':'soy-tag'}">${electionLabel}</span></td>
+          <td data-label="Base Ac.">${f.baseAcres.toLocaleString()}</td>
+          <td data-label="PLC Yield">${f.plcYield}</td>
+          <td data-label="ARC-CO $/ac">$${fmt2(arcAc*PAYMENT_FACTOR)}</td>
+          <td data-label="PLC $/ac">$${fmt2(plcAc*PAYMENT_FACTOR)}</td>
+          <td class="pay-cell ${electionClass}" data-label="Payment">${fmtD(payTot)} <span style="font-weight:400;font-size:10px;color:#999">(${electionLabel} elected)</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Only show a crop-level subtotal when the county has more than one crop entered
+      if(rows.some(f=>f.crop!==cropKey)){
+        tbody.appendChild(summaryRow('crop-subtotal', `${PROGRAM[cropKey].label} Subtotal`, kAcres, kPay));
+      }
+
+      cAcres += kAcres; cPay += kPay;
+    });
+
+    tbody.appendChild(summaryRow('county-subtotal', `${COUNTIES[ci].name} Subtotal`, cAcres, cPay));
+
+    grandAcres += cAcres; grandPay += cPay;
+  });
+
+  if(countyIdxs.length>0){
+    tbody.appendChild(summaryRow('grand-total', 'GRAND TOTAL', grandAcres, grandPay));
+  }
+
+  document.getElementById('sum-acres').textContent = grandAcres.toLocaleString();
+  document.getElementById('sum-arc').textContent = fmtD(grandArc);
+  document.getElementById('sum-plc').textContent = fmtD(grandPlc);
+  document.getElementById('sum-total').textContent = fmtD(grandPay);
+}
+
+renderFarms();
+
+// ── Help icon tooltip positioning ────────────────────────────
+(function(){
+  const MARGIN = 8, GAP = 8;
+  document.querySelectorAll('.help-icon').forEach(icon=>{
+    const tip = icon.querySelector('.help-tip');
+    if(!tip) return;
+    function show(){
+      tip.style.display = 'block';
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      const ir = icon.getBoundingClientRect();
+      const iconCenterX = ir.left + ir.width/2;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const placeBelow = (ir.top < th + GAP + MARGIN);
+      let top = placeBelow ? (ir.bottom + GAP) : (ir.top - th - GAP);
+      if(top < MARGIN) top = MARGIN;
+      if(top + th > vh - MARGIN) top = Math.max(MARGIN, vh - th - MARGIN);
+      let left = iconCenterX - tw/2;
+      if(left < MARGIN) left = MARGIN;
+      if(left + tw > vw - MARGIN) left = vw - tw - MARGIN;
+      tip.style.left = left + 'px';
+      tip.style.top  = top  + 'px';
+      const arrowLeft = Math.max(10, Math.min(tw - 10, iconCenterX - left));
+      tip.style.setProperty('--al', arrowLeft + 'px');
+      tip.classList.toggle('tip-up', !placeBelow);
+      tip.classList.toggle('tip-down', placeBelow);
+    }
+    function hide(){ tip.style.display = 'none'; }
+    icon.addEventListener('mouseenter', show);
+    icon.addEventListener('mouseleave', hide);
+    icon.addEventListener('focus', show);
+    icon.addEventListener('blur',  hide);
+    icon.addEventListener('touchstart', function(e){
+      e.preventDefault();
+      if(tip.style.display === 'block') hide(); else show();
+    }, {passive:false});
+  });
+  function hideAll(){ document.querySelectorAll('.help-tip').forEach(t=>{ t.style.display='none'; }); }
+  window.addEventListener('scroll', hideAll, true);
+  window.addEventListener('resize', hideAll);
+})();
+</script>
+</body>
+</html>
