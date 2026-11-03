@@ -3,6 +3,9 @@
   2026 ARC-CO / PLC Payment Estimator (Projected)
   © 2026 Herrmann Integrated Agronomy LLC. All rights reserved.
   Created: August 2026
+  Updated: November 2026 — yield sources clarified (FSA benchmark vs. RMA expected),
+  Record County Yield column replaced with FSA ARC-CO Benchmark Yield,
+  Marshall/McLean benchmark yields corrected per FSA ARC-CO 2026 data (2026-01-16).
 -->
 <html lang="en">
 <head>
@@ -171,14 +174,17 @@ td.crop-tag.soy-tag{background:#f5e6cc;color:#8a5c16}
 table.yield-table{border-collapse:separate;border-spacing:0 6px;width:100%;min-width:620px}
 table.yield-table th{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#888;text-align:left;padding:0 6px 4px}
 table.yield-table th.num,table.yield-table td.num{text-align:right}
+table.yield-table th .src{display:block;font-size:9px;font-weight:600;letter-spacing:0;text-transform:none;color:#aaa;margin-top:1px}
 table.yield-table td{padding:4px 6px;vertical-align:middle}
 table.yield-table tr.yield-row{background:#f9f9f7}
 table.yield-table tr.yield-row td{background:#f9f9f7;padding-top:6px;padding-bottom:6px}
 table.yield-table tr.yield-row td:first-child{border-radius:6px 0 0 6px}
 table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
 .yield-record-box{background:#eef5e8;border:1px solid #c8ddb8;border-radius:6px;font-size:12px;font-weight:600;color:#2d5a1b;padding:5px 8px;text-align:right}
+.yield-rma-box{background:#f5f5f0;border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:600;color:#555;padding:5px 8px;text-align:right}
 .yield-input{background:#fff;border:1px solid #ddd;border-radius:6px;font-size:12px;padding:5px 7px;width:100%;text-align:right;outline:none}
 .yield-input:focus{border-color:#5a8a3c}
+.yield-source-note{font-size:10.5px;color:#777;line-height:1.5;margin-top:8px;padding:8px 10px;background:#fbfbf9;border:1px solid #eee;border-left:3px solid #c98a2b;border-radius:6px}
 
 /* CSV export fallback modal — shown alongside the auto-download attempt so
    the data is always retrievable even if the embedding page's iframe
@@ -246,7 +252,7 @@ table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
     </div>
 
     <div class="panel">
-      <div class="panel-title">Select Counties<span class="help-icon">?<span class="help-tip">Check every county where you farm base acres. Checked counties become available in the farm entry table below, and their record &amp; expected 2026 yields will appear in the yield panel.</span></span></div>
+      <div class="panel-title">Select Counties<span class="help-icon">?<span class="help-tip">Check every county where you farm base acres. Checked counties become available in the farm entry table below, and their FSA ARC-CO benchmark yields and RMA 2026 expected yields will appear in the yield panel.</span></span></div>
       <div class="county-dropdown" id="county-dropdown">
         <button type="button" class="county-dd-btn" id="county-dd-btn">
           <span id="county-dd-label">Select counties…</span>
@@ -268,22 +274,25 @@ table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
 
   <div>
     <div class="panel">
-      <div class="panel-title">2026 Expected County Yields<span class="help-icon">?<span class="help-tip">Final 2026 county yields aren't known yet — you tell the tool what to assume. Record County Yield is the highest final NASS county yield on record for that county/crop. 2026 Expected Yield is an early trend-yield estimate, shown for reference. 2026 Final Yield is the box you edit to test your own scenario — it drives the Actual County Revenue used in the ARC-CO calculation below.</span></span></div>
+      <div class="panel-title">2026 County Yields<span class="help-icon">?<span class="help-tip">Final 2026 county yields aren't known yet — you tell the tool what to assume. ARC-CO Benchmark Yield is FSA's 2026 benchmark (Olympic average of 2020–24 trend-adjusted county yields) and is what the ARC-CO guarantee is built on. 2026 Expected Yield is RMA's crop-insurance expected county yield, shown for reference only. 2026 Final Yield is the box you edit — your estimate of FSA's final 2026 county yield, which drives the Actual County Revenue in the ARC-CO calculation.</span></span></div>
       <div class="yield-table-wrap">
         <table class="yield-table" id="yield-table">
           <thead>
             <tr>
-              <th style="width:26%">County</th>
-              <th style="width:14%">Crop</th>
-              <th class="num" style="width:20%">Record County Yield</th>
-              <th class="num" style="width:20%">2026 Expected Yield</th>
-              <th class="num" style="width:20%">2026 Final Yield</th>
+              <th style="width:24%">County</th>
+              <th style="width:13%">Crop</th>
+              <th class="num" style="width:21%">ARC-CO Benchmark Yield<span class="src">FSA · used in calc</span></th>
+              <th class="num" style="width:21%">2026 Expected Yield<span class="src">RMA · reference only</span></th>
+              <th class="num" style="width:21%">2026 Final Yield<span class="src">Your estimate · used in calc</span></th>
             </tr>
           </thead>
           <tbody id="yield-tbody"></tbody>
         </table>
       </div>
-      <div class="empty-note" id="yield-empty-note">Select at least one county on the left to see its record &amp; expected 2026 yields.</div>
+      <div class="empty-note" id="yield-empty-note">Select at least one county on the left to see its benchmark &amp; expected 2026 yields.</div>
+      <div class="yield-source-note">
+        <strong>About the RMA Expected Yield:</strong> The 2026 Expected Yield column is the USDA Risk Management Agency (RMA) expected county yield used for crop insurance (e.g., area-based coverage such as SCO and ECO). It is <strong>not</strong> an FSA figure and is not used in the ARC-CO formula. FSA determines its own county yields for ARC-CO, and FSA's final 2026 county yield may differ from RMA's expected or final yields. It is shown only as a starting point for your 2026 Final Yield estimate. Benchmark and expected yields shown are for non-irrigated practice (or FSA's all-practice yield where FSA does not publish a separate non-irrigated figure).
+      </div>
     </div>
 
     <div class="panel">
@@ -372,7 +381,7 @@ table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
     </div>
 
     <div class="disclaimer">
-      <strong>How this projection works:</strong> PLC Payment/ac = 85% × (Effective Reference Price − Effective Price) × your PLC Yield, where Effective Price is the higher of the MYA price above or the national loan rate. ARC-CO Payment/ac = 85% × min[(90% × Benchmark Revenue − Actual County Revenue), 12% × Benchmark Revenue], where Benchmark Revenue = ARC-CO Benchmark Price × ARC-CO Benchmark (Olympic-average) County Yield, and Actual County Revenue = Effective Price × the <em>2026 Final Yield</em> you enter above (since final 2026 NASS county yields won't be published until well after harvest). Reference prices, benchmark prices/yields, and loan rates reflect the One Big Beautiful Bill Act of 2025 changes to the 2018 Farm Bill formulas (90% guarantee, 12% cap, 113%/88% effective reference price escalator), currently projected forward to the 2026 crop year. <strong>Program election matters for 2026:</strong> 2025 was the only crop year FSA paid the higher of ARC-CO or PLC automatically — every other year, including 2026, FSA pays only the program actually elected for that farm and covered commodity. Set each farm's Program Election in the table above to match what was elected; the results reflect only that program's payment, with the other program's $/ac shown for reference only. This tool provides planning-stage estimates only, using assumptions you control; it is not an official FSA payment calculation, does not reflect final USDA prices or yields, and does not account for payment limitations, adjusted gross income limits, or sequestration reductions. Confirm final figures — including your actual program election — with your local FSA office once 2026 data is published.
+      <strong>How this projection works:</strong> PLC Payment/ac = 85% × (Effective Reference Price − Effective Price) × your PLC Yield, where Effective Price is the higher of the MYA price above or the national loan rate. ARC-CO Payment/ac = 85% × min[(90% × Benchmark Revenue − Actual County Revenue), 12% × Benchmark Revenue], where Benchmark Revenue = ARC-CO Benchmark Price × FSA's ARC-CO Benchmark (Olympic-average) County Yield, and Actual County Revenue = Effective Price × the <em>2026 Final Yield</em> you enter above (since FSA's final 2026 county yields won't be published until well after harvest). <strong>Yield sources:</strong> ARC-CO benchmark yields are taken from FSA's 2026 ARC-CO benchmark data (non-irrigated, or all-practice where FSA does not separate practices); irrigated base in counties with a separate FSA irrigated yield is not modeled. The 2026 Expected Yield column comes from RMA (crop insurance) and is shown for reference only — FSA and RMA county yields are separate figures and can differ. Reference prices, benchmark prices/yields, and loan rates reflect the One Big Beautiful Bill Act of 2025 changes to the 2018 Farm Bill formulas (90% guarantee, 12% cap, 113%/88% effective reference price escalator), currently projected forward to the 2026 crop year. <strong>Program election matters for 2026:</strong> 2025 was the only crop year FSA paid the higher of ARC-CO or PLC automatically — every other year, including 2026, FSA pays only the program actually elected for that farm and covered commodity. Set each farm's Program Election in the table above to match what was elected; the results reflect only that program's payment, with the other program's $/ac shown for reference only. This tool provides planning-stage estimates only, using assumptions you control; it is not an official FSA payment calculation, does not reflect final USDA prices or yields, and does not account for payment limitations, adjusted gross income limits, or sequestration reductions. Confirm final figures — including your actual program election — with your local FSA office once 2026 data is published.
     </div>
   </div>
 </div>
@@ -392,30 +401,32 @@ const ARC_GUARANTEE = 0.90;   // OBBBA: 90% of benchmark revenue (was 86%)
 const ARC_CAP = 0.12;         // OBBBA: 12% of benchmark revenue (was 10%)
 const PAYMENT_FACTOR = 0.85;  // 85% of base acres
 
-// ── County data: 2026 ARC-CO benchmark (Olympic-avg) yield, all-time record county
-// yield (highest final NASS yield on record), and an early 2026 trend-yield estimate
-// (used only as the starting point for the user-editable "2026 Expected Yield" input) ──
+// ── County data ──
+// arcYield:      FSA 2026 ARC-CO benchmark yield (2020-24 Olympic avg of trend-adjusted
+//                county yields), from FSA "arcco_2026_data" (2026-01-16). Non-irrigated
+//                designation, or "All" where FSA doesn't split practice.
+// expectedYield: RMA 2026 expected county yield (crop insurance) — reference only, and the
+//                starting value for the user-editable "2026 Final Yield" input.
 const COUNTIES = [
-  { name:"Bureau Co",   corn:{arcYield:233.09, recordYield:250.4, expectedYield:233.9}, soy:{arcYield:70.75, recordYield:72.6, expectedYield:69.0} },
-  { name:"Fulton Co",   corn:{arcYield:214.64, recordYield:229.8, expectedYield:210.8}, soy:{arcYield:67.24, recordYield:70.6, expectedYield:65.9} },
-  { name:"Henry Co",    corn:{arcYield:231.89, recordYield:238.9, expectedYield:231.5}, soy:{arcYield:68.16, recordYield:69.8, expectedYield:66.2} },
-  { name:"Knox Co",     corn:{arcYield:233.07, recordYield:242.2, expectedYield:235.3}, soy:{arcYield:69.17, recordYield:71.4, expectedYield:66.7} },
-  { name:"Marshall Co", corn:{arcYield:235.89, recordYield:241.3, expectedYield:233.6}, soy:{arcYield:73.28, recordYield:74.3, expectedYield:68.0} },
-  { name:"McLean Co",   corn:{arcYield:236.28, recordYield:249.9, expectedYield:233.2}, soy:{arcYield:70.43, recordYield:75.3, expectedYield:69.8} },
-  { name:"Peoria Co",   corn:{arcYield:231.72, recordYield:241.7, expectedYield:229.8}, soy:{arcYield:70.47, recordYield:72.7, expectedYield:67.2} },
-  { name:"Putnam Co",   corn:{arcYield:221.66, recordYield:227.5, expectedYield:221.6}, soy:{arcYield:67.62, recordYield:70.9, expectedYield:64.9} },
-  { name:"Stark Co",    corn:{arcYield:238.91, recordYield:245.0, expectedYield:236.8}, soy:{arcYield:73.14, recordYield:74.5, expectedYield:70.6} },
-  { name:"Tazewell Co", corn:{arcYield:238.89, recordYield:252.0, expectedYield:238.2}, soy:{arcYield:74.15, recordYield:76.5, expectedYield:72.7} },
-  { name:"Woodford Co", corn:{arcYield:239.83, recordYield:245.6, expectedYield:237.3}, soy:{arcYield:71.86, recordYield:75.4, expectedYield:69.0} }
+  { name:"Bureau Co",   corn:{arcYield:233.09, expectedYield:233.9}, soy:{arcYield:70.75, expectedYield:69.0} },
+  { name:"Fulton Co",   corn:{arcYield:214.64, expectedYield:210.8}, soy:{arcYield:67.24, expectedYield:65.9} },
+  { name:"Henry Co",    corn:{arcYield:231.89, expectedYield:231.5}, soy:{arcYield:68.16, expectedYield:66.2} },
+  { name:"Knox Co",     corn:{arcYield:233.07, expectedYield:235.3}, soy:{arcYield:69.17, expectedYield:66.7} },
+  { name:"Marshall Co", corn:{arcYield:236.28, expectedYield:233.6}, soy:{arcYield:70.43, expectedYield:68.0} },
+  { name:"McLean Co",   corn:{arcYield:235.89, expectedYield:233.2}, soy:{arcYield:73.28, expectedYield:69.8} },
+  { name:"Peoria Co",   corn:{arcYield:231.72, expectedYield:229.8}, soy:{arcYield:70.47, expectedYield:67.2} },
+  { name:"Putnam Co",   corn:{arcYield:221.66, expectedYield:221.6}, soy:{arcYield:67.62, expectedYield:64.9} },
+  { name:"Stark Co",    corn:{arcYield:238.91, expectedYield:236.8}, soy:{arcYield:73.14, expectedYield:70.6} },
+  { name:"Tazewell Co", corn:{arcYield:238.89, expectedYield:238.2}, soy:{arcYield:74.15, expectedYield:72.7} },
+  { name:"Woodford Co", corn:{arcYield:239.83, expectedYield:237.3}, soy:{arcYield:71.86, expectedYield:69.0} }
 ];
 
 let farms = []; // {id, county, fsn, crop, baseAcres, plcYield}
 let nextId = 1;
 
-// User-editable "2026 Final Yield" per county+crop, keyed "idx_crop" — this is the
-// figure the user enters for what they think the crop will actually do, and it's what
-// drives the ARC-CO Actual County Revenue calc. Seeded with each county's early
-// trend-yield estimate (same starting value shown read-only in "2026 Expected Yield").
+// User-editable "2026 Final Yield" per county+crop, keyed "idx_crop" — the user's estimate
+// of FSA's final 2026 county yield; it drives the ARC-CO Actual County Revenue calc.
+// Seeded with each county's RMA expected yield (shown read-only in "2026 Expected Yield").
 let finalYields = {};
 function yKey(idx, crop){ return idx + '_' + crop; }
 function getFinalYield(idx, crop){
@@ -481,7 +492,7 @@ document.getElementById('request-area-link').addEventListener('click', (e)=>{
   window.location.href = `mailto:andrewherrmann@herrmannintegratedag.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 });
 
-// ── 2026 Expected County Yields panel ──────────────────────────
+// ── 2026 County Yields panel ──────────────────────────
 function fmtY(v){ return (Math.round(v*10)/10).toString(); }
 
 function renderYieldPanel(){
@@ -499,8 +510,8 @@ function renderYieldPanel(){
       tr.innerHTML = `
         <td>${c.name}</td>
         <td><span class="crop-tag ${crop==='corn'?'corn-tag':'soy-tag'}">${crop==='corn'?'Corn':'Soybeans'}</span></td>
-        <td class="num"><div class="yield-record-box">${fmtY(cd.recordYield)}</div></td>
-        <td class="num"><div class="yield-record-box">${fmtY(cd.expectedYield)}</div></td>
+        <td class="num"><div class="yield-record-box">${cd.arcYield.toFixed(2)}</div></td>
+        <td class="num"><div class="yield-rma-box">${fmtY(cd.expectedYield)}</div></td>
         <td class="num"><input class="yield-input" type="number" step="0.1" min="0" data-key="${key}" value="${fmtY(val)}"></td>
       `;
       tbody.appendChild(tr);
