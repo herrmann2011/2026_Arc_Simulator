@@ -6,6 +6,9 @@
   Updated: November 2026 — yield sources clarified (FSA benchmark vs. RMA expected),
   Record County Yield column replaced with FSA ARC-CO Benchmark Yield,
   Marshall/McLean benchmark yields corrected per FSA ARC-CO 2026 data (2026-01-16).
+  Updated: November 5, 2026 — export popup now copies tab-separated text (pastes into Excel /
+  Google Sheets with columns split), adds a Download CSV retry button, and import accepts
+  comma- or tab-separated data.
 -->
 <html lang="en">
 <head>
@@ -199,6 +202,10 @@ table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
 .csv-modal-body p{font-size:12px;color:#555;line-height:1.5;margin-bottom:10px}
 .csv-modal-textarea{width:100%;height:220px;font-family:Consolas,Monaco,monospace;font-size:11px;border:1px solid #ddd;border-radius:6px;padding:8px;resize:vertical}
 .csv-modal-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.csv-fmt-row{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:#333;margin-bottom:8px}
+.csv-fmt-row label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.csv-fmt-row input{accent-color:#5a8a3c}
+.csv-modal-body a{color:#5a8a3c;font-weight:600}
 </style>
 </head>
 <body>
@@ -322,7 +329,7 @@ table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
           <button type="button" class="add-btn" id="add-farm-btn">+ Add Farm / FSN</button>
           <button type="button" class="csv-btn" id="export-csv-btn">⬇ Export CSV</button>
           <button type="button" class="csv-btn" id="import-csv-btn">⬆ Import CSV</button>
-          <input type="file" id="import-csv-file" accept=".csv" style="display:none">
+          <input type="file" id="import-csv-file" accept=".csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values" style="display:none">
         </div>
         <div id="import-msg" style="font-size:11px;margin-top:6px;display:none"></div>
       </div>
@@ -335,13 +342,19 @@ table.yield-table tr.yield-row td:last-child{border-radius:0 6px 6px 0}
           <button type="button" class="csv-modal-close" id="csv-modal-close" aria-label="Close">×</button>
         </div>
         <div class="csv-modal-body">
-          <p>A download was attempted automatically. If a file didn't appear (common when this tool is embedded on a webpage), copy the text below and paste it into a spreadsheet, or click "Copy to Clipboard."</p>
+          <p>A file download was attempted automatically. If nothing showed up in your downloads (common when this tool is embedded on a webpage, because the page can block downloads), click <strong>Copy for Excel</strong>, then paste into cell A1 of a blank spreadsheet &mdash; the columns split automatically.</p>
+          <div class="csv-fmt-row">
+            <label><input type="radio" name="csv-fmt" value="tsv" checked> Excel / Google Sheets (tab-separated)</label>
+            <label><input type="radio" name="csv-fmt" value="csv"> CSV text (comma-separated)</label>
+          </div>
           <textarea class="csv-modal-textarea" id="csv-modal-textarea" readonly></textarea>
           <div class="csv-modal-actions">
-            <button type="button" class="add-btn" id="csv-modal-copy">Copy to Clipboard</button>
+            <button type="button" class="add-btn" id="csv-modal-copy">Copy for Excel</button>
+            <button type="button" class="csv-btn" id="csv-modal-download">Download CSV File</button>
             <button type="button" class="csv-btn" id="csv-modal-newtab">Open in New Tab</button>
             <button type="button" class="csv-btn" id="csv-modal-close2">Close</button>
           </div>
+          <p id="csv-modal-embed-tip" style="display:none;margin:10px 0 0">Seeing this inside another website? Browsers often block file downloads from embedded tools. For a direct file download, <a href="https://herrmann2011.github.io/2026_Arc_Simulator/" target="_blank" rel="noopener">open the tool in its own tab</a>.</p>
         </div>
       </div>
     </div>
@@ -616,26 +629,12 @@ function csvEscape(v){
   const s = String(v);
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
 }
+// Tab-separated cells can't contain tabs/newlines; flatten them to spaces.
+function tsvClean(v){ return String(v).replace(/[\t\r\n]+/g,' '); }
 
-document.getElementById('export-csv-btn').addEventListener('click', ()=>{
-  if(farms.length===0){ showImportMsg('No farms to export yet — add at least one farm first.', 'err'); return; }
-  const header = ['County','FSN','Crop','Program','BaseAcres','PLCYield'];
-  const lines = [header.join(',')];
-  farms.forEach(f=>{
-    lines.push([
-      csvEscape(COUNTIES[f.countyIdx].name),
-      csvEscape(f.fsn),
-      csvEscape(f.crop==='corn'?'Corn':'Soybeans'),
-      csvEscape(f.program==='plc'?'PLC':'ARC-CO'),
-      csvEscape(f.baseAcres),
-      csvEscape(f.plcYield)
-    ].join(','));
-  });
-  const csvContent = lines.join('\n');
-
-  // Attempt the standard blob-download trigger. In some embedded contexts
-  // (e.g. a sandboxed iframe on a page builder) the browser silently blocks
-  // this without throwing an error, so we can't rely on it alone.
+// Standard blob-download trigger. In sandboxed embeds (no allow-downloads) the browser
+// silently ignores this, so callers must also offer the copy/paste fallback.
+function triggerCsvDownload(csvContent){
   try{
     const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
@@ -646,12 +645,32 @@ document.getElementById('export-csv-btn').addEventListener('click', ()=>{
     a.click();
     document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url), 1500);
-  } catch(err){ /* fall through to modal fallback below */ }
+  } catch(err){ /* modal fallback covers this */ }
+}
+
+document.getElementById('export-csv-btn').addEventListener('click', ()=>{
+  if(farms.length===0){ showImportMsg('No farms to export yet — add at least one farm first.', 'err'); return; }
+  const header = ['County','FSN','Crop','Program','BaseAcres','PLCYield'];
+  const rows = farms.map(f=>[
+    COUNTIES[f.countyIdx].name,
+    f.fsn,
+    f.crop==='corn'?'Corn':'Soybeans',
+    f.program==='plc'?'PLC':'ARC-CO',
+    f.baseAcres,
+    f.plcYield
+  ]);
+  const csvContent = [header, ...rows].map(r=>r.map(csvEscape).join(',')).join('\r\n');
+  const tsvContent = [header, ...rows].map(r=>r.map(tsvClean).join('\t')).join('\n');
+
+  // Attempt the standard blob-download trigger. In some embedded contexts
+  // (e.g. a sandboxed iframe on a page builder) the browser silently blocks
+  // this without throwing an error, so we can't rely on it alone.
+  triggerCsvDownload(csvContent);
 
   // Always surface the fallback modal too, since a blocked download gives
   // no JS-detectable signal — this guarantees the data is retrievable
   // regardless of whether the auto-download actually worked.
-  openCsvFallback(csvContent);
+  openCsvFallback(csvContent, tsvContent);
   showImportMsg(`Prepared ${farms.length} farm${farms.length===1?'':'s'} for export. Check your downloads, or use the "Your Farm Data" window that just opened.`, 'ok');
 });
 
@@ -659,8 +678,24 @@ document.getElementById('export-csv-btn').addEventListener('click', ()=>{
 const csvModalOverlay = document.getElementById('csv-modal-overlay');
 const csvModalTextarea = document.getElementById('csv-modal-textarea');
 
-function openCsvFallback(csvContent){
-  csvModalTextarea.value = csvContent;
+let csvModalData = {csv:'', tsv:''};
+function currentCsvFmt(){
+  const r = document.querySelector('input[name="csv-fmt"]:checked');
+  return r ? r.value : 'tsv';
+}
+function refreshCsvModal(){
+  const f = currentCsvFmt();
+  csvModalTextarea.value = f==='tsv' ? csvModalData.tsv : csvModalData.csv;
+  document.getElementById('csv-modal-copy').textContent = f==='tsv' ? 'Copy for Excel' : 'Copy CSV Text';
+}
+document.querySelectorAll('input[name="csv-fmt"]').forEach(r=>r.addEventListener('change', refreshCsvModal));
+
+function openCsvFallback(csvContent, tsvContent){
+  csvModalData = {csv: csvContent, tsv: tsvContent};
+  refreshCsvModal();
+  let embedded = false;
+  try{ embedded = window.self !== window.top; } catch(e){ embedded = true; }
+  document.getElementById('csv-modal-embed-tip').style.display = embedded ? 'block' : 'none';
   csvModalOverlay.classList.add('open');
 }
 function closeCsvFallback(){
@@ -687,6 +722,10 @@ document.getElementById('csv-modal-copy').addEventListener('click', async ()=>{
     catch(err2){ btn.textContent = 'Select the text above and copy manually'; }
   }
   setTimeout(()=>{ btn.textContent = original; }, 2000);
+});
+
+document.getElementById('csv-modal-download').addEventListener('click', ()=>{
+  triggerCsvDownload(csvModalData.csv);
 });
 
 document.getElementById('csv-modal-newtab').addEventListener('click', ()=>{
@@ -722,7 +761,7 @@ document.getElementById('import-csv-file').addEventListener('change', (e)=>{
 });
 
 // Minimal CSV line parser that respects quoted fields containing commas
-function parseCsvLine(line){
+function parseCsvLine(line, delim=','){
   const out = [];
   let cur = '', inQuotes = false;
   for(let i=0;i<line.length;i++){
@@ -734,7 +773,7 @@ function parseCsvLine(line){
       } else cur += ch;
     } else {
       if(ch === '"') inQuotes = true;
-      else if(ch === ','){ out.push(cur); cur=''; }
+      else if(ch === delim){ out.push(cur); cur=''; }
       else cur += ch;
     }
   }
@@ -752,10 +791,13 @@ function findCountyIdx(name){
 }
 
 function parseAndImportCsv(text){
+  text = String(text).replace(/^﻿/, '');
   const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
   if(lines.length < 2){ showImportMsg('That CSV has no farm rows to import.', 'err'); return; }
 
-  const header = parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
+  // Accept comma-separated (CSV) or tab-separated (pasted/saved from Excel) data
+  const delim = lines[0].split('\t').length > lines[0].split(',').length ? '\t' : ',';
+  const header = parseCsvLine(lines[0], delim).map(h=>h.trim().toLowerCase());
   const idxCounty = header.indexOf('county');
   const idxFsn = header.indexOf('fsn');
   const idxCrop = header.indexOf('crop');
@@ -773,7 +815,7 @@ function parseAndImportCsv(text){
   let skipped = 0;
 
   for(let i=1;i<lines.length;i++){
-    const row = parseCsvLine(lines[i]);
+    const row = parseCsvLine(lines[i], delim);
     if(row.every(c=>c.trim()==='')) continue;
     const countyName = row[idxCounty];
     const cIdx = findCountyIdx(countyName);
